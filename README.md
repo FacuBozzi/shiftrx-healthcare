@@ -81,4 +81,4 @@ Errors (400) clarify missing payloads, mismatched shift/application pairs, or al
 - `src/server/actions/` – Server actions for applying, withdrawing, and hiring.
 - `prisma/` – Schema, migration history, and seed script.
 
-Enjoy exploring the staffing marketplace! Let me know if you’d like a Loom walkthrough or deployment instructions.
+Enjoy exploring the app! Let me know if you have any questions or run into an issue.
