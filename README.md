@@ -1,5 +1,7 @@
 # ShiftRx Staffing Challenge
 
+## [Loom Demo](https://www.loom.com/share/80a6af133ef147a8bcada1e95413a9f5?sid=d5256af5-5baf-441c-a670-c66c3ba860b7)
+
 A Next.js App Router project that simulates a healthcare staffing marketplace. Providers can browse open shifts, track their applications, review hired assignments, and switch between mock user profiles—matching the visual language of the supplied ShiftRx dashboard.
 
 ## ✨ Highlights
@@ -75,11 +77,5 @@ Errors (400) clarify missing payloads, mismatched shift/application pairs, or al
 - `src/data/` – Prisma-backed query helpers for users, shifts, and applications.
 - `src/server/actions/` – Server actions for applying, withdrawing, and hiring.
 - `prisma/` – Schema, migration history, and seed script.
-
-## 📝 Design Notes & Next Steps
-- Styling closely mirrors the provided mock: brand colors, card layout, and banner visuals. Tailwind utilities keep the implementation concise.
-- Filters currently target shift status; extending to rate or date ranges would be straightforward via query params.
-- Adding optimistic UI indicators (e.g., toast confirmations) and real cancel/message flows would round out the experience.
-- For production readiness, replace SQLite with PostgreSQL and wire real authentication.
 
 Enjoy exploring the staffing marketplace! Let me know if you’d like a Loom walkthrough or deployment instructions.
