@@ -21,7 +21,7 @@ export async function getActiveUserBundle() {
   }
 
   const fallbackUser = users[0];
-  const selectedUserId = resolveSelectedUserId(fallbackUser.id);
+  const selectedUserId = await resolveSelectedUserId(fallbackUser.id);
   const activeUser = users.find((user) => user.id === selectedUserId) ?? fallbackUser;
 
   return {

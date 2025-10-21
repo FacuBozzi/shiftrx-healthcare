@@ -1,7 +1,12 @@
 'use client';
 
-import { forwardRef } from 'react';
-import type { ButtonHTMLAttributes } from 'react';
+import {
+  forwardRef,
+  cloneElement,
+  isValidElement,
+  type ButtonHTMLAttributes,
+  type ReactElement,
+} from 'react';
 import { cn } from '@/lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
@@ -11,6 +16,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
+  asChild?: boolean;
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -30,19 +36,31 @@ const sizeStyles: Record<ButtonSize, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', fullWidth, ...props }, ref) => (
-    <button
-      ref={ref}
-      className={cn(
-        'inline-flex items-center justify-center gap-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-70',
-        variantStyles[variant],
-        sizeStyles[size],
-        fullWidth && 'w-full',
-        className
-      )}
-      {...props}
-    />
-  )
+  ({ className, variant = 'primary', size = 'md', fullWidth, asChild = false, children, ...props }, ref) => {
+    const classes = cn(
+      'inline-flex items-center justify-center gap-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-70',
+      variantStyles[variant],
+      sizeStyles[size],
+      fullWidth && 'w-full',
+      className
+    );
+
+    if (asChild) {
+      if (!isValidElement(children)) {
+        throw new Error('Button with asChild expects a single React element child.');
+      }
+      return cloneElement(children as ReactElement, {
+        className: cn(classes, (children as ReactElement).props.className),
+        ...props,
+      });
+    }
+
+    return (
+      <button ref={ref} className={classes} {...props}>
+        {children}
+      </button>
+    );
+  }
 );
 
 Button.displayName = 'Button';

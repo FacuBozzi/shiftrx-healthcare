@@ -9,8 +9,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const { users, activeUser } = await getActiveUserBundle();
 
   return (
-    <AppShell>
-      <ActiveUserProvider value={{ users, activeUser }}>
+    <ActiveUserProvider value={{ users, activeUser }}>
+      <AppShell>
         <div className="flex flex-col gap-8">
           <MainHeader
             name={activeUser.name}
@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           />
           {children}
         </div>
-      </ActiveUserProvider>
-    </AppShell>
+      </AppShell>
+    </ActiveUserProvider>
   );
 }

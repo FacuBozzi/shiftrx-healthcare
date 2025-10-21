@@ -2,18 +2,19 @@ import { cookies } from 'next/headers';
 
 export const USER_COOKIE_KEY = 'shiftrx-active-user';
 
-export function getSelectedUserId() {
-  const cookieStore = cookies();
+export async function getSelectedUserId() {
+  const cookieStore = await cookies();
   return cookieStore.get(USER_COOKIE_KEY)?.value;
 }
 
-export function resolveSelectedUserId(fallbackUserId: string) {
-  return getSelectedUserId() ?? fallbackUserId;
+export async function resolveSelectedUserId(fallbackUserId: string) {
+  const selected = await getSelectedUserId();
+  return selected ?? fallbackUserId;
 }
 
 export async function setSelectedUserId(userId: string) {
   'use server';
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set(USER_COOKIE_KEY, userId, {
     path: '/',
     sameSite: 'lax',
