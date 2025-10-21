@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ShiftStatus {
+  OPEN
+  HIRED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  WITHDRAWN
+  REJECTED
+  HIRED
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  applications  Application[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Shift {
+  id              String        @id @default(cuid())
+  title           String
+  description     String?
+  facilityName    String
+  location        String?
+  startsAt        DateTime
+  endsAt          DateTime
+  hourlyRateCents Int
+  status          ShiftStatus   @default(OPEN)
+  hiredProviderId String?
+  applications    Application[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  shiftId   String
+  userId    String
+  status    ApplicationStatus @default(APPLIED)
+  createdAt DateTime          @default(now())
+
+  shift Shift @relation(fields: [shiftId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([shiftId, userId])
+}

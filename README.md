@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ShiftRx Staffing Challenge
 
-## Getting Started
+A Next.js App Router project that simulates a healthcare staffing marketplace. Providers can browse open shifts, track their applications, review hired assignments, and switch between mock user profiles—matching the visual language of the supplied ShiftRx dashboard.
 
-First, run the development server:
+## ✨ Highlights
+- **Dashboard overview** with upcoming confirmed shifts, open opportunities, and performance metrics styled after the reference design.
+- **User switcher** toggles between seeded providers without auth; selections persist via cookies.
+- **Apply / withdraw flows** backed by Prisma with duplicate protection and optimistic UX via server actions.
+- **Filterable shift list** with status pills and contextual actions (apply, confirmed, filled, cancelled).
+- **Applications hub** summarizing every submission with live status.
+- **Hire API** (`POST /api/hire`) flips a shift to `HIRED`, records the provider, and rejects competing applications (used for the follow-up interview requirement).
+- **Jest tests** covering server actions and hire orchestration logic.
+
+## 🧰 Stack
+- Next.js 15 (App Router, Server Actions)
+- TypeScript & Tailwind CSS 4
+- Prisma ORM with SQLite
+- Jest + Testing Library
+
+## 🚀 Getting Started
+Prerequisites: Node 20+, npm.
 
 ```bash
+npm install
+npm run db:migrate      # prisma migrate dev
+npm run db:seed         # populate sample users/shifts/applications
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000` to explore the UI. The sidebar switcher lets you jump between providers and immediately see their personalized data.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Testing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test
+```
 
-## Learn More
+The suite exercises apply/withdraw server actions, the hire helper, and the error path for the hire API route.
 
-To learn more about Next.js, take a look at the following resources:
+## 🗃️ Seed Data
+`npm run db:seed` loads three providers and a curated set of shifts:
+- Peter Parker (default) has two confirmed shifts and one active application.
+- Gwen Stacy & Miles Morales create realistic competition, including rejected apps.
+- Shifts span `OPEN`, `HIRED`, and `CANCELLED` states to showcase UI edge cases.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Feel free to tweak `prisma/seed.ts` and rerun the seed script; Prisma will wipe existing records before inserting.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔗 API Reference
+### `POST /api/hire`
+Marks a shift as hired and finalises application statuses.
 
-## Deploy on Vercel
+```bash
+curl -X POST http://localhost:3000/api/hire \
+  -H 'Content-Type: application/json' \
+  -d '{ "applicationId": "<app-id>", "shiftId": "<shift-id>" }'
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Response (200)**
+```json
+{
+  "ok": true,
+  "shift": {
+    "id": "clxgreenvalley",
+    "status": "HIRED",
+    "hiredProviderId": "clxpeter"
+  }
+}
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Errors (400) clarify missing payloads, mismatched shift/application pairs, or already-filled shifts.
+
+## 🧭 Project Structure
+- `src/app/(dashboard)/` – Home dashboard, shifts listing/detail, applications page, and group layout.
+- `src/components/` – UI building blocks (layout shell, shift cards, promo banners, action buttons) plus a client-side active user context.
+- `src/data/` – Prisma-backed query helpers for users, shifts, and applications.
+- `src/server/actions/` – Server actions for applying, withdrawing, and hiring.
+- `prisma/` – Schema, migration history, and seed script.
+
+## 📝 Design Notes & Next Steps
+- Styling closely mirrors the provided mock: brand colors, card layout, and banner visuals. Tailwind utilities keep the implementation concise.
+- Filters currently target shift status; extending to rate or date ranges would be straightforward via query params.
+- Adding optimistic UI indicators (e.g., toast confirmations) and real cancel/message flows would round out the experience.
+- For production readiness, replace SQLite with PostgreSQL and wire real authentication.
+
+Enjoy exploring the staffing marketplace! Let me know if you’d like a Loom walkthrough or deployment instructions.
