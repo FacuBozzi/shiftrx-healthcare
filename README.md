@@ -11,6 +11,7 @@ A Next.js App Router project that simulates a healthcare staffing marketplace. P
 - **Filterable shift list** with status pills and contextual actions (apply, confirmed, filled, cancelled).
 - **Applications hub** summarizing every submission with live status.
 - **Hire API** (`POST /api/hire`) flips a shift to `HIRED`, records the provider, and rejects competing applications (used for the follow-up interview requirement).
+- **Optimistic apply/withdraw** actions that update UI state instantly and revert on failure.
 - **Jest tests** covering server actions and hire orchestration logic.
 
 ## 🧰 Stack
@@ -49,7 +50,7 @@ Feel free to tweak `prisma/seed.ts` and rerun the seed script; Prisma will wipe 
 
 ## 🔗 API Reference
 ### `POST /api/hire`
-Marks a shift as hired and finalises application statuses.
+Marks a shift as hired and finalises application statuses (executed inside a single Prisma transaction for atomicity).
 
 ```bash
 curl -X POST http://localhost:3000/api/hire \
