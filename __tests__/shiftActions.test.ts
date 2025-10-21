@@ -106,6 +106,7 @@ describe('hireProvider helper', () => {
       userId: 'user-1',
       shiftId: 'shift-1',
       shift: { id: 'shift-1', status: 'OPEN' },
+      status: 'APPLIED',
     });
     prismaMock.shift.update.mockResolvedValue({ id: 'shift-1', status: 'HIRED' });
 
@@ -126,5 +127,35 @@ describe('hireProvider helper', () => {
     prismaMock.application.findUnique.mockResolvedValue(null);
 
     await expect(hireProvider(prismaMock as never, 'missing', 'shift-1')).rejects.toThrow('Application not found');
+  });
+
+  test('throws when application is not active', async () => {
+    prismaMock.application.findUnique.mockResolvedValue({
+      id: 'app-2',
+      userId: 'user-2',
+      shiftId: 'shift-1',
+      status: 'WITHDRAWN',
+      shift: { id: 'shift-1', status: 'OPEN' },
+    });
+
+    await expect(hireProvider(prismaMock as never, 'app-2', 'shift-1')).rejects.toThrow(
+      'Provider already withdrew application'
+    );
+    expect(prismaMock.shift.update).not.toHaveBeenCalled();
+  });
+
+  test('throws when application is rejected', async () => {
+    prismaMock.application.findUnique.mockResolvedValue({
+      id: 'app-3',
+      userId: 'user-3',
+      shiftId: 'shift-1',
+      status: 'REJECTED',
+      shift: { id: 'shift-1', status: 'OPEN' },
+    });
+
+    await expect(hireProvider(prismaMock as never, 'app-3', 'shift-1')).rejects.toThrow(
+      'Application was previously rejected'
+    );
+    expect(prismaMock.shift.update).not.toHaveBeenCalled();
   });
 });
