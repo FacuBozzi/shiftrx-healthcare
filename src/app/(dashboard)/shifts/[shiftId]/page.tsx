@@ -26,7 +26,8 @@ export default async function ShiftDetailPage({
   }
 
   const applicants = shift.applications.length;
-  const isUserHired = shift.hiredProviderId === activeUser.id;
+  const userApplicationStatus = shift.userApplication?.status ?? null;
+  const isUserHired = userApplicationStatus === "HIRED";
 
   const actionContent =
     shift.status === "OPEN" ? (
@@ -118,7 +119,11 @@ export default async function ShiftDetailPage({
                 ? "Accepting applications"
                 : isUserHired
                   ? "Assigned to you"
-                  : "No longer available"}
+                  : userApplicationStatus === "WITHDRAWN"
+                    ? "You withdrew your application"
+                    : userApplicationStatus === "REJECTED"
+                      ? "Your application was rejected"
+                      : "No longer available"}
             </div>
           </div>
         </div>

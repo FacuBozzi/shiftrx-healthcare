@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import type { ApplicationStatus, ShiftStatus } from '@prisma/client';
 import { applyToShiftAction, withdrawApplicationAction } from '@/server/actions/shifts';
 import { Button } from '@/components/ui/button';
@@ -14,29 +14,35 @@ interface ShiftActionsProps {
 
 export function ShiftActions({ shiftId, userId, shiftStatus, applicationStatus }: ShiftActionsProps) {
   const [isPending, startTransition] = useTransition();
+  const [optimisticStatus, setOptimisticStatus] = useState<ApplicationStatus | null>(null);
+  const currentStatus = optimisticStatus ?? applicationStatus ?? null;
 
   const handleApply = () => {
+    setOptimisticStatus('APPLIED');
     startTransition(async () => {
       try {
         await applyToShiftAction(shiftId, userId);
       } catch (error) {
         console.error(error);
+        setOptimisticStatus(null);
       }
     });
   };
 
   const handleWithdraw = () => {
+    setOptimisticStatus('WITHDRAWN');
     startTransition(async () => {
       try {
         await withdrawApplicationAction(shiftId, userId);
       } catch (error) {
         console.error(error);
+        setOptimisticStatus(null);
       }
     });
   };
 
-  const isApplied = applicationStatus === 'APPLIED';
-  const isWithdrawn = applicationStatus === 'WITHDRAWN';
+  const isApplied = currentStatus === 'APPLIED';
+  const isWithdrawn = currentStatus === 'WITHDRAWN';
 
   const disabled = shiftStatus !== 'OPEN' || isPending;
 

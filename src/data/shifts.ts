@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { ApplicationStatus, Prisma, ShiftStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export type ShiftWithApplications = Prisma.ShiftGetPayload<{
@@ -10,6 +10,12 @@ export async function getUpcomingShiftsForUser(userId: string) {
     where: {
       status: 'HIRED',
       hiredProviderId: userId,
+      applications: {
+        some: {
+          userId,
+          status: 'HIRED',
+        },
+      },
       startsAt: {
         gte: new Date(),
       },
@@ -88,15 +94,67 @@ export async function getApplicationsForUser(userId: string) {
   });
 }
 
-export async function getAllShiftsForUser(userId: string) {
+type ShiftSort = 'date-asc' | 'date-desc' | 'rate-asc' | 'rate-desc';
+
+interface ShiftQueryOptions {
+  status?: ShiftStatus | 'ALL';
+  minRateCents?: number;
+  startDate?: Date;
+  sort?: ShiftSort;
+  applicationStatus?: ApplicationStatus | 'ALL' | 'NONE';
+}
+
+const sortMap: Record<ShiftSort, Prisma.ShiftOrderByWithRelationInput[]> = {
+  'date-asc': [{ startsAt: 'asc' }, { createdAt: 'asc' }],
+  'date-desc': [{ startsAt: 'desc' }, { createdAt: 'desc' }],
+  'rate-asc': [{ hourlyRateCents: 'asc' }, { startsAt: 'asc' }],
+  'rate-desc': [{ hourlyRateCents: 'desc' }, { startsAt: 'asc' }],
+};
+
+export async function getAllShiftsForUser(userId: string, options: ShiftQueryOptions = {}) {
+  const where: Prisma.ShiftWhereInput = {};
+
+  if (options.status && options.status !== 'ALL') {
+    where.status = options.status;
+  }
+
+  if (options.minRateCents) {
+    where.hourlyRateCents = { gte: options.minRateCents };
+  }
+
+  if (options.startDate) {
+    where.startsAt = { gte: options.startDate };
+  }
+
+  if (options.applicationStatus && options.applicationStatus !== 'ALL') {
+    if (options.applicationStatus === 'NONE') {
+      where.applications = {
+        none: {
+          userId,
+        },
+      };
+    } else {
+      where.applications = {
+        some: {
+          userId,
+          status: options.applicationStatus,
+        },
+      };
+    }
+  }
+
+  const sortKey = options.sort ?? 'date-asc';
+  const orderBy = sortMap[sortKey] ?? sortMap['date-asc'];
+
   return prisma.shift.findMany({
+    where,
     include: {
       applications: {
         where: { userId },
       },
     },
-    orderBy: {
-      startsAt: 'asc',
-    },
+    orderBy,
   });
 }
+
+export type { ShiftQueryOptions, ShiftSort };

@@ -1,33 +1,47 @@
-import Link from 'next/link';
+import { ApplicationStatus, ShiftStatus } from '@prisma/client';
 import { AvailableShiftCard } from '@/components/shifts/available-shift-card';
 import { ShiftActions } from '@/components/shifts/shift-actions';
 import { ShiftCard } from '@/components/shifts/shift-card';
 import { Card } from '@/components/ui/card';
+import { ShiftFilters } from '@/components/shifts/shift-filters';
 import { getActiveUserBundle } from '@/data/users';
-import { getAllShiftsForUser } from '@/data/shifts';
+import { getAllShiftsForUser, type ShiftSort } from '@/data/shifts';
 import { formatCurrencyFromCents } from '@/lib/formatters';
-import { cn } from '@/lib/utils';
 
-const filterOptions = [
-  { label: 'All', value: 'all' },
-  { label: 'Open', value: 'OPEN' },
-  { label: 'Hired', value: 'HIRED' },
-  { label: 'Cancelled', value: 'CANCELLED' },
-];
+const applicationStatusValues = new Set(Object.values(ApplicationStatus));
 
 export default async function ShiftsPage({
   searchParams,
 }: {
-  searchParams?: { status?: string };
+  searchParams?: { applicationStatus?: string; minRate?: string; startDate?: string; sort?: string };
 }) {
   const { activeUser } = await getActiveUserBundle();
-  const shifts = await getAllShiftsForUser(activeUser.id);
 
-  const statusFilter = (searchParams?.status ?? 'all').toUpperCase();
-  const filteredShifts =
-    statusFilter === 'ALL'
-      ? shifts
-      : shifts.filter((shift) => shift.status === statusFilter);
+  const statusFilter: ShiftStatus | 'ALL' = 'ALL';
+
+  const rawApplicationStatus = searchParams?.applicationStatus?.toUpperCase();
+  const applicationStatusFilter: ApplicationStatus | 'ALL' | 'NONE' =
+    rawApplicationStatus === 'NONE'
+      ? 'NONE'
+      : rawApplicationStatus && applicationStatusValues.has(rawApplicationStatus as ApplicationStatus)
+        ? (rawApplicationStatus as ApplicationStatus)
+        : 'ALL';
+
+  const minRateParam = searchParams?.minRate ? Number(searchParams.minRate) : undefined;
+  const minRateCents = minRateParam && !Number.isNaN(minRateParam) ? Math.max(0, Math.round(minRateParam * 100)) : undefined;
+
+  const startDateParam = searchParams?.startDate ? new Date(searchParams.startDate) : undefined;
+  const startDate = startDateParam && !Number.isNaN(startDateParam.getTime()) ? startDateParam : undefined;
+
+  const sortParam = (searchParams?.sort as ShiftSort | undefined) ?? 'date-asc';
+
+  const shifts = await getAllShiftsForUser(activeUser.id, {
+    status: statusFilter,
+    minRateCents,
+    startDate,
+    sort: sortParam,
+    applicationStatus: applicationStatusFilter,
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -38,30 +52,18 @@ export default async function ShiftsPage({
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {filterOptions.map((option) => {
-          const isActive = option.value.toUpperCase() === statusFilter;
-          const href = option.value === 'all' ? '/shifts' : `/shifts?status=${option.value}`;
-          return (
-            <Link
-              key={option.value}
-              href={href}
-              className={cn(
-                'rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                isActive ? 'bg-blue-600 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-              )}
-            >
-              {option.label}
-            </Link>
-          );
-        })}
-      </div>
+      <ShiftFilters
+        applicationStatus={applicationStatusFilter}
+        minRate={minRateParam && !Number.isNaN(minRateParam) ? minRateParam : undefined}
+        startDate={startDate?.toISOString().slice(0, 10)}
+        sort={sortParam}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
-        {filteredShifts.length === 0 ? (
+        {shifts.length === 0 ? (
           <Card className="text-sm text-neutral-500">No shifts match this filter.</Card>
         ) : (
-          filteredShifts.map((shift) => {
+          shifts.map((shift) => {
             const userApplication = shift.applications[0];
             if (shift.status === 'OPEN') {
               return (
@@ -80,7 +82,7 @@ export default async function ShiftsPage({
               );
             }
 
-            const isUsersShift = shift.hiredProviderId === activeUser.id;
+            const isUsersShift = userApplication?.status === 'HIRED';
             const statusLabel =
               shift.status === 'HIRED'
                 ? isUsersShift
