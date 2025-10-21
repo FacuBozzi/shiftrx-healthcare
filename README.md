@@ -32,6 +32,8 @@ npm run dev
 
 Visit `http://localhost:3000` to explore the UI. The sidebar switcher lets you jump between providers and immediately see their personalized data.
 
+Environment variables live in `.env`; copy `.env.example` as a starter and adjust `DATABASE_URL` if you move away from SQLite.
+
 ### Testing
 
 ```bash
